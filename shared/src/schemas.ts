@@ -96,21 +96,27 @@ export const productInputSchema = z.object({
   tiers: z
     .array(tierInputSchema, { error: 'Add at least one pricing tier' })
     .min(1, { error: 'Add at least one pricing tier' })
-    .superRefine((tiers, ctx) => {
-      const firstIndexByUnits = new Map<number, number>();
-      tiers.forEach((tier, index) => {
-        const first = firstIndexByUnits.get(tier.unitsPerBundle);
-        if (first === undefined) {
-          firstIndexByUnits.set(tier.unitsPerBundle, index);
-        } else {
+    .superRefine(
+      (tiers, ctx) => {
+        const firstIndexByUnits = new Map<number, number>();
+        tiers.forEach((tier, index) => {
+          // Runs even when other tier fields are invalid (see `when`), so be defensive.
+          const units = (tier as { unitsPerBundle?: unknown } | undefined)?.unitsPerBundle;
+          if (typeof units !== 'number' || !Number.isInteger(units)) return;
+          if (!firstIndexByUnits.has(units)) {
+            firstIndexByUnits.set(units, index);
+            return;
+          }
           ctx.addIssue({
             code: 'custom',
             path: [index, 'unitsPerBundle'],
-            message: `Another tier already has ${tier.unitsPerBundle} unit(s) per bundle`,
+            message: `Another tier already has ${units} unit(s) per bundle`,
           });
-        }
-      });
-    }),
+        });
+      },
+      // Report duplicates together with other errors, not only once everything else is valid.
+      { when: (payload) => Array.isArray(payload.value) },
+    ),
 });
 
 export const productListQuerySchema = z.object({

@@ -96,6 +96,24 @@ describe('productInputSchema', () => {
     expect(issues(result)).toEqual(['tiers.2.unitsPerBundle']);
   });
 
+  it('reports duplicate units together with other tier errors', () => {
+    const result = productInputSchema.safeParse({
+      ...validProduct,
+      tiers: [
+        { label: 'A', unitsPerBundle: 1, bundlePrice: '1.2345' },
+        { label: 'B', unitsPerBundle: 1, bundlePrice: '2' },
+        { label: 'C', unitsPerBundle: Number.NaN, bundlePrice: '3' },
+        { label: 'D', unitsPerBundle: Number.NaN, bundlePrice: '4' },
+      ],
+    });
+    expect(issues(result).sort()).toEqual([
+      'tiers.0.bundlePrice',
+      'tiers.1.unitsPerBundle',
+      'tiers.2.unitsPerBundle',
+      'tiers.3.unitsPerBundle',
+    ]);
+  });
+
   it('validates tier fields', () => {
     const result = productInputSchema.safeParse({
       ...validProduct,
