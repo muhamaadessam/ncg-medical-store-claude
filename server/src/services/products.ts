@@ -194,8 +194,16 @@ export async function deleteProduct(db: Database, id: string, uploadDir?: string
     .select({ url: productImages.url })
     .from(productImages)
     .where(eq(productImages.productId, id));
-  const result = await db.delete(products).where(eq(products.id, id)); // tiers + images cascade
-  if (result[0].affectedRows === 0) throw notFound('Product not found');
+  // Delete the child rows explicitly instead of relying only on ON DELETE CASCADE: if the
+  // foreign keys are ever missing (MyISAM tables), leftover image rows would make the files look
+  // "still in use" and they would never be removed.
+  const deleted = await db.transaction(async (tx) => {
+    await tx.delete(productImages).where(eq(productImages.productId, id));
+    await tx.delete(pricingTiers).where(eq(pricingTiers.productId, id));
+    const [result] = await tx.delete(products).where(eq(products.id, id));
+    return result.affectedRows;
+  });
+  if (deleted === 0) throw notFound('Product not found');
   if (uploadDir) {
     await removeOrphanUploads(
       db,

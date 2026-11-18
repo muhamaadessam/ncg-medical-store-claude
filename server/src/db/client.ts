@@ -30,7 +30,9 @@ export function createPool(databaseUrl = config.databaseUrl, options: mysql.Pool
   return pool;
 }
 
-export const SET_UTC_SESSION = "SET time_zone = '+00:00'";
+// UTC session (see above) and InnoDB for every table the migrations create: some shared hosts
+// default to MyISAM, which silently drops foreign keys (ON DELETE CASCADE) and transactions.
+export const SET_UTC_SESSION = "SET time_zone = '+00:00', default_storage_engine = 'InnoDB'";
 
 export function createDb(pool: mysql.Pool): Database {
   return drizzle(pool, { schema, mode: 'default' });
