@@ -37,6 +37,12 @@ jobs:
           cache: npm
       - run: npm ci
       - run: npm run lint
+      - name: Check the deploy scripts
+        # shellcheck is preinstalled on GitHub's Ubuntu runners. The test sources a fake CloudLinux
+        # activate script that reads unset variables, like the real one does on the server.
+        run: |
+          shellcheck scripts/deploy/*.sh
+          bash scripts/deploy/test-activate.sh
       - run: npm test -w shared
       - run: npm test -w client
       - run: npm run build
