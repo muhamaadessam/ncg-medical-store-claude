@@ -125,13 +125,18 @@ lazy images, page titles.
   testing (automated + manual checklist), deployment (cPanel steps), known limitations (no auth,
   cart per browser, out-of-scope features, local disk uploads).
 
-## Task 10 — Deploy to cPanel (`ncg.muhammadessam.me`)
+## Task 10 — Deploy to Namecheap cPanel + Cloudflare DNS (`ncg.muhammadessam.me`)
 
 Write `docs/DEPLOY.md` and a `npm run package` script that produces a deployable folder/zip:
 `server/dist`, `client/dist`, `shared` build, `package.json` + lockfile, migrations, seed.
 Steps to document:
 
-1. cPanel → Domains: create subdomain `ncg.muhammadessam.me`; run AutoSSL.
+1. Namecheap cPanel → Domains: create subdomain `ncg.muhammadessam.me` (document root outside the app root).
+   Cloudflare → DNS: `A` record `ncg` → Namecheap server IP (shown in cPanel "Server Information").
+   SSL: issue the cert first with the record **DNS only** (grey cloud) so cPanel AutoSSL validates, or
+   install a Cloudflare Origin Certificate in cPanel SSL/TLS; then switch to **Proxied** and set
+   Cloudflare SSL/TLS mode to **Full (strict)** (never "Flexible": redirect loops). Disable Rocket Loader
+   (conflicts with the CSP); purge Cloudflare cache after each deploy (index.html is `no-cache`).
 2. MySQL Databases: create DB + user, grant all; build `DATABASE_URL`.
 3. Setup Node.js App: Node 20, app root, URL `ncg.muhammadessam.me`, startup file `server/dist/index.js`,
    env vars (`NODE_ENV=production`, `DATABASE_URL`, `UPLOAD_DIR`).

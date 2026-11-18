@@ -11,7 +11,8 @@ database. Auth, checkout, payment, orders and inventory are **out of scope**.
 Brief's tech preference: React + TypeScript + Tailwind CSS, a real backend and a persistent
 database (no mock data / localStorage for the catalog), deployed on a live link.
 
-Production target: **cPanel shared hosting**, subdomain `ncg.muhammadessam.me`, served by ONE
+Production target: an existing **Namecheap shared hosting (cPanel)** server, subdomain
+`ncg.muhammadessam.me` with **DNS managed in Cloudflare** (record points to the Namecheap server IP), served by ONE
 Node.js app (cPanel "Setup Node.js App" / Passenger) that serves both the API (`/api/*`) and the
 built React app (same origin, no CORS). Database: the hosting's **MySQL/MariaDB**.
 
