@@ -68,7 +68,7 @@ checked with axe-core (WCAG 2.1 AA) at all three widths.
 | Area       | Choice                                                                                                                           | Why                                                                          |
 | ---------- | -------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------- |
 | Client     | React 18, Vite, TypeScript, Tailwind CSS v4, shadcn/ui-style components, React Router 7, TanStack Query, react-hook-form, sonner | As requested in the brief                                                    |
-| Server     | Node 20+, Express 5, TypeScript, helmet, compression, multer                                                                     | One small app that serves the API **and** the built client                   |
+| Server     | Node 24, Express 5, TypeScript, helmet, compression, multer                                                                      | One small app that serves the API **and** the built client                   |
 | Database   | MySQL / MariaDB with **Drizzle ORM + mysql2**                                                                                    | Pure JavaScript (no native binaries), which matters on cPanel shared hosting |
 | Validation | **zod** schemas in `shared/`, used by the client forms **and** the API                                                           | One source of truth for every rule                                           |
 | Tests      | Vitest, supertest, React Testing Library                                                                                         | 185 tests, API tests run against a real MariaDB                              |
@@ -231,7 +231,7 @@ status codes (400 with per-field `details` for validation errors, 404, 409, 413,
 
 ## Local setup
 
-Requirements: **Node.js 20.19+** and **MySQL 8 or MariaDB 10.6+** (production uses MariaDB 11.4).
+Requirements: **Node.js 24** and **MySQL 8 or MariaDB 10.6+** (production uses MariaDB 11.4).
 
 ### 1. Start a database
 
@@ -327,8 +327,8 @@ npm test
 
 API tests need `TEST_DATABASE_URL`; without it they are skipped locally, and they are required in
 CI. GitHub Actions (`.github/workflows/ci.yml`) runs lint, the shared and client tests and the build
-on **Node.js 20 and 24**, and the API tests against real **MariaDB 11.4** (production's engine) and
-**MySQL 8.4** containers; pushes to `main` that pass are deployed.
+on **Node.js 24**, with the API tests against a real **MariaDB 11.4** container (production's
+engine); pushes to `main` that pass are deployed.
 
 ### Manual checklist
 

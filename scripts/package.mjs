@@ -104,7 +104,7 @@ const prodPkg = {
   private: true,
   description: 'NCG Pharmacy production bundle (API + built React app)',
   main: 'server/dist/index.js',
-  engines: { node: '>=20.19.0' },
+  engines: rootPkg.engines,
   scripts: {
     start: 'node server/dist/index.js',
     'db:migrate': 'node server/dist/db/migrate.js',
