@@ -130,7 +130,7 @@ export function AdminProductsPage() {
                     <td className="px-4 py-2 font-medium">
                       <Link
                         to={`/admin/products/${product.id}`}
-                        className="hover:text-primary hover:underline"
+                        className="-my-3 inline-block py-3 hover:text-primary hover:underline"
                       >
                         {product.name}
                       </Link>
@@ -162,7 +162,7 @@ export function AdminProductsPage() {
                 <div className="min-w-0 flex-1 space-y-1">
                   <Link
                     to={`/admin/products/${product.id}`}
-                    className="line-clamp-2 font-medium hover:text-primary hover:underline"
+                    className="-my-2 line-clamp-2 py-2 font-medium hover:text-primary hover:underline"
                   >
                     {product.name}
                   </Link>

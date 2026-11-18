@@ -31,7 +31,10 @@ export function CartLineItem({
       </Link>
 
       <div className="min-w-0 space-y-1">
-        <Link to={href} className="line-clamp-2 font-medium hover:text-primary hover:underline">
+        <Link
+          to={href}
+          className="-my-2 line-clamp-2 py-2 font-medium hover:text-primary hover:underline"
+        >
           {product.name}
         </Link>
         <p className="text-sm">
@@ -65,7 +68,6 @@ export function CartLineItem({
           onChange={onBundlesChange}
           label="Bundles"
           hideLabel
-          size="sm"
           context={context}
           className="lg:justify-self-center"
         />

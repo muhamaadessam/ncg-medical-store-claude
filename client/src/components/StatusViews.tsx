@@ -10,7 +10,9 @@ export function ErrorState({
   onRetry,
   retrying,
   className,
+  headingLevel = 2,
 }: {
+  headingLevel?: 1 | 2;
   title?: string;
   error?: unknown;
   onRetry?: () => void;
@@ -27,7 +29,7 @@ export function ErrorState({
     >
       <AlertTriangle aria-hidden className="size-8 text-destructive" />
       <div className="space-y-1">
-        <h2 className="font-semibold">{title}</h2>
+        <Heading level={headingLevel}>{title}</Heading>
         {error !== undefined && (
           <p className="text-sm text-muted-foreground">{errorMessage(error)}</p>
         )}
@@ -48,7 +50,9 @@ export function EmptyState({
   icon,
   action,
   className,
+  headingLevel = 2,
 }: {
+  headingLevel?: 1 | 2;
   title: string;
   description?: ReactNode;
   icon?: ReactNode;
@@ -64,10 +68,16 @@ export function EmptyState({
     >
       {icon ?? <PackageSearch aria-hidden className="size-10 text-muted-foreground" />}
       <div className="space-y-1">
-        <h2 className="font-semibold">{title}</h2>
+        <Heading level={headingLevel}>{title}</Heading>
         {description && <p className="text-sm text-muted-foreground">{description}</p>}
       </div>
       {action}
     </div>
   );
+}
+
+/** Pages without their own <h1> (e.g. "Product not found") make the state title the h1. */
+function Heading({ level, children }: { level: 1 | 2; children: ReactNode }) {
+  const Tag = level === 1 ? 'h1' : 'h2';
+  return <Tag className={level === 1 ? 'text-xl font-semibold' : 'font-semibold'}>{children}</Tag>;
 }

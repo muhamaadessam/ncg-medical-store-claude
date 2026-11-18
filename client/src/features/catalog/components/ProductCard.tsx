@@ -43,7 +43,7 @@ export function ProductCard({
           <h2 className="text-base leading-snug font-semibold">
             <Link
               to={href}
-              className="outline-none hover:text-primary hover:underline focus-visible:text-primary focus-visible:underline"
+              className="-my-2.5 inline-block py-2.5 outline-none hover:text-primary hover:underline focus-visible:text-primary focus-visible:underline"
             >
               {product.name}
             </Link>

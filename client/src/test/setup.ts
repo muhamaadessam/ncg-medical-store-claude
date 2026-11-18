@@ -10,6 +10,9 @@ if (typeof Element !== 'undefined' && !Element.prototype.setPointerCapture) {
   Element.prototype.hasPointerCapture = () => false;
 }
 
+// jsdom does not implement scrolling (React Router's ScrollRestoration calls it).
+if (typeof window !== 'undefined') window.scrollTo = () => {};
+
 // sonner keeps toasts in module state: start every test without leftovers.
 beforeEach(() => {
   toast.dismiss();

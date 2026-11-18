@@ -17,7 +17,7 @@ export function SiteHeader() {
   return (
     <header className="sticky top-0 z-40 border-b bg-background/90 backdrop-blur">
       <div className="mx-auto flex h-16 max-w-7xl items-center justify-between gap-2 px-4">
-        <Link to="/" className="flex items-center gap-2 font-semibold">
+        <Link to="/" className="flex h-10 items-center gap-2 font-semibold">
           <img src="/favicon.svg" alt="" className="size-8" width={32} height={32} />
           <span className="text-base whitespace-nowrap sm:text-lg">NCG Pharmacy</span>
         </Link>

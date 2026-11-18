@@ -15,16 +15,19 @@ export function CartSummary({ totals }: { totals: CartTotals }) {
       <h2 id="summary-heading" className="text-lg font-semibold">
         Order summary
       </h2>
-      <dl className="grid grid-cols-[1fr_auto] gap-y-2 text-sm">
-        <dt className="text-muted-foreground">Bundles</dt>
-        <dd className="text-right tabular-nums">{totals.totalBundles}</dd>
-        <dt className="text-muted-foreground">Packs</dt>
-        <dd className="text-right tabular-nums">{totals.totalPacks}</dd>
-        <div role="presentation" className="col-span-2 my-1 border-t border-border" />
-        <dt className="self-center font-semibold">Subtotal</dt>
-        <dd className="text-right text-xl font-semibold tabular-nums">
-          {formatKWD(totals.subtotalFils)}
-        </dd>
+      <dl className="space-y-2 text-sm [&>div]:flex [&>div]:justify-between [&>div]:gap-4">
+        <div>
+          <dt className="text-muted-foreground">Bundles</dt>
+          <dd className="tabular-nums">{totals.totalBundles}</dd>
+        </div>
+        <div>
+          <dt className="text-muted-foreground">Packs</dt>
+          <dd className="tabular-nums">{totals.totalPacks}</dd>
+        </div>
+        <div className="items-center border-t border-border pt-3">
+          <dt className="font-semibold">Subtotal</dt>
+          <dd className="text-xl font-semibold tabular-nums">{formatKWD(totals.subtotalFils)}</dd>
+        </div>
       </dl>
 
       {/* aria-disabled (not disabled) keeps it focusable so keyboard users get the tooltip too. */}
@@ -41,7 +44,7 @@ export function CartSummary({ totals }: { totals: CartTotals }) {
         <p
           id={tooltipId}
           role="tooltip"
-          className="pointer-events-none absolute bottom-full left-1/2 mb-2 w-max max-w-60 -translate-x-1/2 rounded-md bg-foreground px-3 py-1.5 text-xs text-background opacity-0 shadow transition-opacity group-focus-within:opacity-100 group-hover:opacity-100"
+          className="pointer-events-none absolute top-full left-1/2 z-10 mt-2 w-max max-w-60 -translate-x-1/2 rounded-md bg-foreground px-3 py-1.5 text-xs text-background opacity-0 shadow transition-opacity group-focus-within:opacity-100 group-hover:opacity-100"
         >
           {CHECKOUT_DISABLED_REASON}
         </p>

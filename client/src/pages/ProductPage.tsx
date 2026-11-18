@@ -30,6 +30,7 @@ export function ProductPage() {
       <div className="space-y-4">
         <BackLink />
         <ErrorState
+          headingLevel={1}
           title="We couldn't load this product"
           error={query.error}
           onRetry={() => query.refetch()}
@@ -170,6 +171,7 @@ function ProductNotFound() {
     <div className="space-y-4">
       <BackLink />
       <EmptyState
+        headingLevel={1}
         title="Product not found"
         description="It may have been removed, or the link is incorrect."
         action={

@@ -1,11 +1,11 @@
 import { useCallback, useMemo } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { idSchema } from '@ncg/shared';
+import { isUuid } from '@ncg/shared';
 
 /** Read a filter id from the URL; anything that is not a UUID is ignored (never sent to the API). */
 function readId(params: URLSearchParams, key: string): string | undefined {
   const value = params.get(key);
-  return value && idSchema.safeParse(value).success ? value : undefined;
+  return isUuid(value) ? value : undefined;
 }
 
 /** Brand / category filters stored in the URL as `?brand=<id>&category=<id>`. */

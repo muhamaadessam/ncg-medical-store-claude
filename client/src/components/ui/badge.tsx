@@ -11,7 +11,7 @@ const badgeVariants = cva(
         default: 'border-transparent bg-primary text-primary-foreground',
         secondary: 'border-transparent bg-secondary text-secondary-foreground',
         outline: 'text-foreground',
-        success: 'border-transparent bg-success/15 text-success',
+        success: 'border-transparent bg-emerald-100 text-emerald-800',
         accent: 'border-transparent bg-amber-100 text-amber-900',
       },
     },
@@ -33,7 +33,7 @@ function Badge({
         badgeVariants({ variant }),
         // Used as a link: big enough to tap, with a visible focus ring.
         asChild &&
-          'min-h-8 px-3 text-sm transition-colors outline-none hover:brightness-95 focus-visible:ring-[3px] focus-visible:ring-ring/50',
+          'min-h-10 px-3 text-sm transition-colors outline-none hover:brightness-95 focus-visible:ring-[3px] focus-visible:ring-ring/50',
         className,
       )}
       {...props}

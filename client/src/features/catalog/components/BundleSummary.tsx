@@ -17,21 +17,26 @@ export function BundleSummary({
     <dl
       aria-live="polite"
       className={cn(
-        'grid grid-cols-[1fr_auto] gap-x-4 gap-y-1 rounded-lg bg-muted/60 p-4 text-sm',
+        'space-y-1 rounded-lg bg-muted/60 p-4 text-sm [&>div]:flex [&>div]:justify-between [&>div]:gap-4',
         className,
       )}
     >
-      <dt className="text-muted-foreground">Selection</dt>
-      <dd className="text-right font-medium">
-        {bundles} × {tier.label}
-      </dd>
-      <dt className="text-muted-foreground">Total packs</dt>
-      <dd className="text-right font-medium tabular-nums">{linePacks(line)}</dd>
-      <div role="presentation" className="col-span-2 my-1 border-t border-border" />
-      <dt className="self-center font-semibold">Total</dt>
-      <dd className="text-right text-lg font-semibold tabular-nums">
-        {formatKWD(lineTotalFils(line))}
-      </dd>
+      <div>
+        <dt className="text-muted-foreground">Selection</dt>
+        <dd className="text-right font-medium">
+          {bundles} × {tier.label}
+        </dd>
+      </div>
+      <div>
+        <dt className="text-muted-foreground">Total packs</dt>
+        <dd className="text-right font-medium tabular-nums">{linePacks(line)}</dd>
+      </div>
+      <div className="mt-2 items-center border-t border-border pt-2">
+        <dt className="font-semibold">Total</dt>
+        <dd className="text-right text-lg font-semibold tabular-nums">
+          {formatKWD(lineTotalFils(line))}
+        </dd>
+      </div>
     </dl>
   );
 }

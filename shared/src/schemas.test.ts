@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { brandInputSchema, priceKwdSchema, productInputSchema } from './schemas';
+import { isUuid } from './ids';
+import { brandInputSchema, idSchema, priceKwdSchema, productInputSchema } from './schemas';
 
 const BRAND = '0b9a1b5e-6f8e-4d55-9f3a-0d3a9b5f0c11';
 const CATEGORY = '4c6f9d3e-2a1b-4c8d-9e7f-1a2b3c4d5e6f';
@@ -140,5 +141,21 @@ describe('productInputSchema', () => {
     for (const url of ['https://evil.example/x.jpg', '/uploads/../.env', 'javascript:alert(1)']) {
       expect(productInputSchema.safeParse({ ...validProduct, images: [url] }).success).toBe(false);
     }
+  });
+});
+
+describe('isUuid', () => {
+  it('agrees with the zod uuid schema', () => {
+    for (const value of [
+      BRAND,
+      CATEGORY,
+      'not-a-uuid',
+      '',
+      '00000000-0000-0000-0000-000000000000',
+      BRAND.toUpperCase(),
+    ]) {
+      expect(isUuid(value)).toBe(idSchema.safeParse(value).success);
+    }
+    expect(isUuid(42)).toBe(false);
   });
 });
