@@ -1,0 +1,41 @@
+{
+  "name": "ncg-pharmacy",
+  "version": "1.0.0",
+  "private": true,
+  "description": "NCG Pharmacy: medical e-commerce with multi-tier (bundle) pricing",
+  "license": "UNLICENSED",
+  "workspaces": [
+    "shared",
+    "client",
+    "server"
+  ],
+  "engines": {
+    "node": ">=20.19.0"
+  },
+  "scripts": {
+    "dev": "npm run build -w shared && concurrently -k -n shared,server,client -c gray,blue,magenta \"npm:dev -w shared\" \"npm:dev -w server\" \"npm:dev -w client\"",
+    "build": "npm run build -w shared && npm run build -w client && npm run build -w server",
+    "start": "npm run start -w server",
+    "test": "npm run build -w shared && npm run test --workspaces --if-present",
+    "lint": "eslint . && prettier --check .",
+    "format": "prettier --write .",
+    "typecheck": "npm run typecheck --workspaces --if-present",
+    "db:migrate": "npm run db:migrate -w server --if-present",
+    "db:seed": "npm run db:seed -w server --if-present"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.39.0",
+    "concurrently": "^9.2.1",
+    "eslint": "^9.39.0",
+    "eslint-config-prettier": "^10.1.8",
+    "eslint-plugin-react-hooks": "^5.2.0",
+    "eslint-plugin-react-refresh": "^0.4.24",
+    "globals": "^16.5.0",
+    "prettier": "^3.6.2",
+    "prettier-plugin-tailwindcss": "^0.7.1",
+    "typescript": "~5.9.3",
+    "typescript-eslint": "^8.46.0",
+    "vite": "^7.1.12",
+    "vitest": "^4.0.0"
+  }
+}

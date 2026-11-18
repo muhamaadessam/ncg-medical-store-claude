@@ -1,0 +1,16 @@
+node_modules/
+dist/
+*.tsbuildinfo
+coverage/
+.env
+.env.*
+!.env.example
+server/uploads/*
+!server/uploads/.gitkeep
+package-deploy/
+*.zip
+*.log
+.DS_Store
+.vscode/*
+!.vscode/extensions.json
+.idea/

@@ -1,0 +1,29 @@
+{
+  "name": "@ncg/server",
+  "version": "1.0.0",
+  "private": true,
+  "main": "dist/index.js",
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "dev": "tsx watch --clear-screen=false src/index.ts",
+    "start": "cross-env NODE_ENV=production node dist/index.js",
+    "test": "vitest run",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@ncg/shared": "*",
+    "compression": "^1.8.1",
+    "cross-env": "^10.1.0",
+    "dotenv": "^17.2.3",
+    "express": "^5.1.0",
+    "helmet": "^8.1.0"
+  },
+  "devDependencies": {
+    "@types/compression": "^1.8.1",
+    "@types/express": "^5.0.3",
+    "@types/node": "^20.19.0",
+    "@types/supertest": "^6.0.3",
+    "supertest": "^7.1.4",
+    "tsx": "^4.20.6"
+  }
+}
