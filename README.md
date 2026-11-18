@@ -357,6 +357,11 @@ In short: create the database and user in cPanel, create the Node.js app (Node 2
 build output), upload the deployment package, run NPM install, `db:migrate` and `db:seed`, then
 restart and check `/api/health`. The step-by-step guide is in [`docs/DEPLOY.md`](docs/DEPLOY.md).
 
+**Automatic deploys**: every push to `main` that passes CI is deployed by
+`.github/workflows/deploy.yml` (build on GitHub → rsync over SSH → install inside the CloudLinux
+virtual environment → migrate → restart → health check). One-time setup (SSH key + GitHub
+environment secrets) is in [`docs/DEPLOY.md`](docs/DEPLOY.md#automatic-deploys-on-every-push-github-actions).
+
 ## Known limitations
 
 - **No authentication**: the admin is open to anyone with the link (out of scope; marked with a

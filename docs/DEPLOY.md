@@ -99,6 +99,18 @@ Already done for this server; for a new one:
 
    `PORT` is **not** needed: Passenger assigns it and the server listens on `process.env.PORT`.
 
+   These variables reach the **running app** only. Commands run in the Terminal/SSH (and the
+   automatic deploys) do not see them, so also put the same three lines in a file
+   **`/home/CPANELUSER/ncg-app/.env`** (File Manager → `ncg-app` → **+ File** → `.env`, then
+   _Change Permissions_ → `600`). The app reads it on start, deploys never overwrite or delete it,
+   and it is not in git.
+
+   ```
+   NODE_ENV=production
+   DATABASE_URL=mysql://CPANELUSER_ncgapp:PASSWORD@localhost:3306/CPANELUSER_ncg
+   UPLOAD_DIR=/home/CPANELUSER/ncg-data/uploads
+   ```
+
 4. Click **Create**. cPanel writes the Passenger configuration into the domain's `.htaccess`.
 
 ## 4. Upload and install
@@ -108,11 +120,17 @@ Already done for this server; for a new one:
    `ncg-app`, not in a subfolder.)
 2. **Setup Node.js App → (edit the app) → Run NPM Install**. This installs the production
    dependencies into the app's virtual environment.
+
+   > Do **not** run `npm install` yourself inside `ncg-app`: there `node_modules` is a symlink into
+   > the virtual environment, and npm 7+ replaces that symlink with a real folder, which breaks the
+   > CloudLinux app. Use the button (or the automatic deploy below, which installs inside the
+   > virtual environment the same way the button does).
+
 3. Create the tables and the demo data, in either of these ways:
    - **Without a terminal**: on the app page, under _Run JS script_, run **`db:migrate`**, then
      **`db:seed`**.
-   - **With the terminal** (cPanel → Terminal, or SSH): copy the _"Enter to the virtual
-     environment"_ command shown at the top of the app page, then:
+   - **With the terminal** (cPanel → Terminal, or SSH; needs the `.env` file from step 3): copy the
+     _"Enter to the virtual environment"_ command shown at the top of the app page, then:
 
      ```bash
      source /home/CPANELUSER/nodevenv/ncg-app/22/bin/activate && cd /home/CPANELUSER/ncg-app
@@ -142,7 +160,59 @@ Click **Restart** on the app page, then check:
       404).
 - [ ] https://ncg.muhammadessam.me/does-not-exist → the app's own "Page not found".
 
-## Updating (redeploy)
+## Automatic deploys on every push (GitHub Actions)
+
+`.github/workflows/deploy.yml` deploys **every push to `main` whose CI passed**: it builds the
+package on GitHub, copies it to the server over SSH (`rsync --delete`, keeping `.env`, the
+`node_modules` link, `tmp/` and logs), installs dependencies **inside the virtual environment**,
+runs `db:migrate`, restarts the app (`tmp/restart.txt`) and checks `/api/health`. A failed check
+fails the workflow. It can also be started by hand (**Actions → Deploy → Run workflow**, with an
+optional _seed_ for the first deploy).
+
+The scripts it runs are `scripts/deploy/push.sh` (on GitHub) and `scripts/deploy/remote.sh` (on
+the server).
+
+### One-time setup
+
+1. Do sections **1–3** above (app created in cPanel, environment variables, **and the `.env`
+   file**). Uploading the zip by hand is not needed.
+2. **Create a deploy key** on your computer (no passphrase; it is only for GitHub):
+
+   ```bash
+   ssh-keygen -t ed25519 -C github-deploy-ncg -N "" -f ncg_deploy
+   ```
+
+   This creates `ncg_deploy` (private) and `ncg_deploy.pub` (public). If cPanel refuses an ed25519
+   key, use `ssh-keygen -t rsa -b 4096 -C github-deploy-ncg -N "" -f ncg_deploy` instead.
+
+3. **cPanel → SSH Access → Manage SSH Keys → Import Key**: name `github-deploy`, paste the content
+   of `ncg_deploy.pub` in the _public key_ box, Import. Back in the list: **Manage → Authorize**.
+4. **Pin the server's host key** (protects against a fake server), using the SSH host and port from
+   cPanel → _SSH Access_ (Namecheap: `serverXXX.web-hosting.com`, port `21098`):
+
+   ```bash
+   ssh-keyscan -p 21098 serverXXX.web-hosting.com
+   ```
+
+5. **GitHub → repository Settings → Environments → New environment** `production`. Optionally
+   limit _Deployment branches_ to `main`. Add these **environment secrets**:
+
+   | Secret            | Value                                               |
+   | ----------------- | --------------------------------------------------- |
+   | `SSH_HOST`        | `serverXXX.web-hosting.com`                         |
+   | `SSH_PORT`        | `21098`                                             |
+   | `SSH_USER`        | the cPanel username                                 |
+   | `SSH_PRIVATE_KEY` | the whole content of `ncg_deploy` (the private key) |
+   | `SSH_KNOWN_HOSTS` | the output of `ssh-keyscan` from step 4             |
+
+   Optional **variables**: `DEPLOY_APP_DIR` (default `ncg-app`), `DEPLOY_URL` (default
+   `https://ncg.muhammadessam.me`). Then delete `ncg_deploy` from your computer (or keep it in a
+   password manager); never commit it.
+
+6. **First deploy**: Actions → **Deploy** → _Run workflow_ (branch `main`), tick **seed**. From then
+   on, every push to `main` deploys by itself after CI.
+
+## Updating by hand (without GitHub Actions)
 
 1. Locally: `npm run package`.
 2. In `ncg-app`, delete the old `client`, `server`, `package.json` and `package-lock.json` (never
@@ -156,12 +226,18 @@ left open on the old version shows _"A new version is available"_ with a Reload 
 
 ## Troubleshooting
 
-| Symptom                                                       | Fix                                                                                                                                                                             |
-| ------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `/api/health` returns `503` / `"database":"unavailable"`      | Check `DATABASE_URL` (user and database names include the `CPANELUSER_` prefix; URL-encode special characters in the password), that the user has ALL PRIVILEGES, then Restart. |
-| "We're sorry, but something went wrong" (Passenger page)      | The app crashed on start: read `ncg-app/stderr.log`. Usually missing dependencies (run NPM Install) or the wrong startup file / Node version.                                   |
-| Pages work but images are broken                              | `UPLOAD_DIR` must exist and be writable; run `db:seed` again to copy the demo images there.                                                                                     |
-| "Cloudflare 526 Invalid SSL certificate"                      | The origin certificate is missing or expired in cPanel, or SSL mode is Full (strict) without it.                                                                                |
-| Redirect loop                                                 | Cloudflare SSL mode is _Flexible_: use Full (strict).                                                                                                                           |
-| Changes in `.env` / variables not picked up                   | Variables are read at start: click Restart.                                                                                                                                     |
-| `npm run db:migrate` says "command not found" in the terminal | Enter the virtual environment first (the `source …/activate` command from the app page).                                                                                        |
+| Symptom                                                          | Fix                                                                                                                                                                             |
+| ---------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `/api/health` returns `503` / `"database":"unavailable"`         | Check `DATABASE_URL` (user and database names include the `CPANELUSER_` prefix; URL-encode special characters in the password), that the user has ALL PRIVILEGES, then Restart. |
+| "We're sorry, but something went wrong" (Passenger page)         | The app crashed on start: read `ncg-app/stderr.log`. Usually missing dependencies (run NPM Install) or the wrong startup file / Node version.                                   |
+| Pages work but images are broken                                 | `UPLOAD_DIR` must exist and be writable; run `db:seed` again to copy the demo images there.                                                                                     |
+| "Cloudflare 526 Invalid SSL certificate"                         | The origin certificate is missing or expired in cPanel, or SSL mode is Full (strict) without it.                                                                                |
+| Redirect loop                                                    | Cloudflare SSL mode is _Flexible_: use Full (strict).                                                                                                                           |
+| Changes in `.env` / variables not picked up                      | Variables are read at start: click Restart.                                                                                                                                     |
+| `npm run db:migrate` says "command not found" in the terminal    | Enter the virtual environment first (the `source …/activate` command from the app page).                                                                                        |
+| Migrations from the terminal fail with "DATABASE_URL is not set" | Variables from the cPanel UI are not visible in the terminal: create `ncg-app/.env` (section 3).                                                                                |
+| `ncg-app/node_modules` became a real folder (app broken)         | Someone ran npm inside `ncg-app`. Delete that folder, then click **Run NPM Install** (it recreates the link).                                                                   |
+| Deploy workflow: "Permission denied (publickey)"                 | The key is not authorized in cPanel → SSH Access (Manage → Authorize), or `SSH_USER`/`SSH_PORT` is wrong.                                                                       |
+| Deploy workflow: "Host key verification failed"                  | `SSH_KNOWN_HOSTS` does not match the server: run `ssh-keyscan` again and update the secret.                                                                                     |
+| Deploy workflow: "No Node.js virtual environment"                | The app was not created in cPanel → Setup Node.js App, or `DEPLOY_APP_DIR` differs from its Application root.                                                                   |
+| Deploy workflow: "rsync: command not found"                      | The server has no rsync (rare on cPanel): ask the host to enable it, or deploy by hand with the zip.                                                                            |

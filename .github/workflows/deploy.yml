@@ -1,0 +1,103 @@
+name: Deploy
+
+# Every push to main: CI runs first; only a green CI deploys. "Run workflow" deploys manually
+# (e.g. the first deploy, with the seed).
+on:
+  workflow_run:
+    workflows: [CI]
+    types: [completed]
+    branches: [main]
+  workflow_dispatch:
+    inputs:
+      seed:
+        description: Also add the demo data (safe to repeat; existing products are kept)
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
+# Never run two deploys at once, and never cancel one halfway.
+concurrency:
+  group: deploy-production
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    if: github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    environment:
+      name: production
+      url: ${{ vars.DEPLOY_URL || 'https://ncg.muhammadessam.me' }}
+    env:
+      SSH_HOST: ${{ secrets.SSH_HOST }}
+      SSH_PORT: ${{ secrets.SSH_PORT || '21098' }}
+      SSH_USER: ${{ secrets.SSH_USER }}
+      APP_DIR: ${{ vars.DEPLOY_APP_DIR || 'ncg-app' }}
+      DEPLOY_URL: ${{ vars.DEPLOY_URL || 'https://ncg.muhammadessam.me' }}
+
+    steps:
+      - name: Check configuration
+        env:
+          SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
+        run: |
+          missing=""
+          [ -n "$SSH_HOST" ] || missing="$missing SSH_HOST"
+          [ -n "$SSH_USER" ] || missing="$missing SSH_USER"
+          [ -n "$SSH_PRIVATE_KEY" ] || missing="$missing SSH_PRIVATE_KEY"
+          if [ -n "$missing" ]; then
+            echo "::error::Missing secrets in the 'production' environment:$missing (see docs/DEPLOY.md)"
+            exit 1
+          fi
+
+      - uses: actions/checkout@v4
+        with:
+          # The exact commit CI tested (workflow_run), or the chosen branch (manual run).
+          ref: ${{ github.event.workflow_run.head_sha || github.sha }}
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - run: npm ci
+
+      - name: Build the deployment package
+        run: npm run package
+
+      - name: Configure SSH
+        env:
+          SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
+          SSH_KNOWN_HOSTS: ${{ secrets.SSH_KNOWN_HOSTS }}
+        run: |
+          install -m 700 -d ~/.ssh
+          printf '%s\n' "$SSH_PRIVATE_KEY" > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
+          printf 'Host *\n  IdentityFile ~/.ssh/deploy_key\n  IdentitiesOnly yes\n' > ~/.ssh/config
+          if [ -n "$SSH_KNOWN_HOSTS" ]; then
+            printf '%s\n' "$SSH_KNOWN_HOSTS" > ~/.ssh/known_hosts
+          else
+            echo "::warning::SSH_KNOWN_HOSTS is not set; trusting the host key seen now (set it to pin the key)."
+            ssh-keyscan -p "$SSH_PORT" "$SSH_HOST" > ~/.ssh/known_hosts
+          fi
+
+      - name: Deploy to cPanel
+        env:
+          SEED: ${{ inputs.seed && 'true' || 'false' }}
+        run: ./scripts/deploy/push.sh
+
+      - name: Health check
+        run: |
+          for i in $(seq 1 12); do
+            body="$(curl -fsS --max-time 10 "$DEPLOY_URL/api/health" || true)"
+            echo "attempt $i: ${body:-no response}"
+            if echo "$body" | grep -q '"database":"ok"'; then exit 0; fi
+            sleep 5
+          done
+          echo "::error::$DEPLOY_URL/api/health did not report a healthy database. Check ~/$APP_DIR/stderr.log on the server."
+          exit 1
+
+      - name: Remove the SSH key
+        if: always()
+        run: rm -f ~/.ssh/deploy_key
