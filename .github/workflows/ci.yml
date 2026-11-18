@@ -66,6 +66,8 @@ jobs:
       db:
         image: ${{ matrix.database.image }}
         env:
+          # Not UTC on purpose (like shared hosting): proves the app keeps timestamps in UTC.
+          TZ: Asia/Karachi
           # Both images accept the MYSQL_* variables.
           MYSQL_ROOT_PASSWORD: root
           MYSQL_DATABASE: ncg_pharmacy_test
@@ -187,6 +189,8 @@ jobs:
           expect 200 /api/products
           # Unknown API routes answer with JSON 404, not the React app.
           expect 404 /api/does-not-exist
+          # Unknown pages render the React 404 page with a real HTTP 404 (no soft 404).
+          expect 404 /some/random/page
           product=$(curl -s "$SITE_URL/api/products" | jq -r '.[0].id // empty')
           if [ -n "$product" ]; then
             expect 200 "/products/$product"

@@ -3,6 +3,7 @@ import path from 'node:path';
 import compression from 'compression';
 import express from 'express';
 import helmet from 'helmet';
+import { isClientRoute } from '@ncg/shared';
 import { config } from './config';
 import { getDb, type Database } from './db/client';
 import { errorHandler } from './middleware/errors';
@@ -60,9 +61,11 @@ export function createApp(options: AppOptions = {}) {
       express.static(path.join(clientDistDir, 'assets'), { immutable: true, maxAge: '1y' }),
     );
     app.use(express.static(clientDistDir, { index: false, maxAge: '1h' }));
-    // SPA fallback: every non-API GET/HEAD that accepts HTML gets index.html.
+    // SPA fallback: every non-API GET/HEAD that accepts HTML gets index.html. Paths that are not
+    // client routes get it with a real 404 (the React "Page not found" still renders).
     app.use((req, res, next) => {
       if ((req.method !== 'GET' && req.method !== 'HEAD') || !req.accepts('html')) return next();
+      res.status(isClientRoute(req.path) ? 200 : 404);
       res.setHeader('Cache-Control', 'no-cache');
       res.sendFile(indexHtml, (err) => err && next(err));
     });
