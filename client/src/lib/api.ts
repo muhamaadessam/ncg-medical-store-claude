@@ -45,3 +45,9 @@ export async function apiFetch<T>(path: string, init: RequestInit = {}): Promise
   if (res.status === 204) return undefined as T;
   return (await res.json()) as T;
 }
+
+/** A message that is safe to show to users for any thrown value. */
+export function errorMessage(error: unknown): string {
+  if (error instanceof ApiError) return error.message;
+  return 'Something went wrong. Please try again.';
+}
