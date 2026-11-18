@@ -71,7 +71,7 @@ checked with axe-core (WCAG 2.1 AA) at all three widths.
 | Server     | Node 24, Express 5, TypeScript, helmet, compression, multer                                                                      | One small app that serves the API **and** the built client                   |
 | Database   | MySQL / MariaDB with **Drizzle ORM + mysql2**                                                                                    | Pure JavaScript (no native binaries), which matters on cPanel shared hosting |
 | Validation | **zod** schemas in `shared/`, used by the client forms **and** the API                                                           | One source of truth for every rule                                           |
-| Tests      | Vitest, supertest, React Testing Library                                                                                         | 185 tests, API tests run against a real MariaDB                              |
+| Tests      | Vitest, supertest, React Testing Library                                                                                         | 243 tests, API tests run against a real MariaDB                              |
 | Monorepo   | npm workspaces: `client`, `server`, `shared`                                                                                     | Shared types, schemas and money helpers                                      |
 
 ## Pricing and cart logic
@@ -184,6 +184,15 @@ erDiagram
 Migrations live in `server/drizzle` (generated with drizzle-kit). The seed (`npm run db:seed`) is
 idempotent and creates the brief's data: MediCare and PharmaPlus; Vitamins & Supplements and
 First Aid; and four products with 1, 2, 3 and 2 tiers.
+
+The brief's three test products are seeded as:
+
+| Brief                     | Seeded product                 | Brand · Category                    | Pricing options (bundle price, total)                   |
+| ------------------------- | ------------------------------ | ----------------------------------- | ------------------------------------------------------- |
+| Product A (one option)    | Digital Thermometer            | MediCare · First Aid                | 1 Pack = 3.750 KWD                                      |
+| Product B (two options)   | Sterile Gauze Pads (10 pcs)    | PharmaPlus · First Aid              | 1 Pack = 1.250, 4 Packs = 4.500 KWD                     |
+| Product C (three options) | Vitamin D3 1000 IU (60 caps)   | MediCare · Vitamins & Supplements   | 1 Pack = 5.500, 4 Packs = 19.500, 12 Packs = 55.000 KWD |
+| (extra)                   | Omega-3 Fish Oil (90 softgels) | PharmaPlus · Vitamins & Supplements | 1 Pack = 6.250, 3 Packs = 17.000 KWD                    |
 
 ## API
 
@@ -319,11 +328,11 @@ needed).
 npm test
 ```
 
-| Package  | Tests | What is covered                                                                                                                                                                                                                                                                                       |
-| -------- | ----- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `shared` | 38    | `toFils` / `formatKWD` (no float errors), per-pack price, best value, savings, all zod rules                                                                                                                                                                                                          |
-| `client` | 81    | cart logic and math (39.000 / 8 packs, 99.500 / 21 packs, tier-keyed lines, 1–99 clamping, deleted offers), stepper, product card, home filters, product page, cart page, admin pages and product form (field array, inline and server errors), 404 and error boundary                                |
-| `server` | 66    | every endpoint with supertest against **real MariaDB/MySQL**: CRUD, validation (400 + field paths), duplicate names (409), RESTRICT delete (409), CASCADE, tier diff (keep / change / swap units / reorder), transaction rollback, uploads (size, type sniffing, random names, cleanup), SPA fallback |
+| Package  | Tests | What is covered                                                                                                                                                                                                                                                                                                                                                                                                      |
+| -------- | ----- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `shared` | 52    | `toFils` / `formatKWD` (no float errors), per-pack price, best value, savings, all zod rules, client-route list for real 404s                                                                                                                                                                                                                                                                                        |
+| `client` | 105   | cart logic and math (39.000 / 8 packs, 99.500 / 21 packs, tier-keyed lines, deleted offers), bundle input (`2.5`, `-5`, `1e2`, `abc`, `0`, `150`, empty: rejected and restored, never turned into another number) on the product page and in the cart, product card, home filters, product page, cart page, admin pages and product form (field array, inline and server errors), 404 and error boundary             |
+| `server` | 86    | every endpoint with supertest against **real MariaDB/MySQL**: CRUD, validation (400 + field paths), duplicate names (409), RESTRICT delete (409), CASCADE, tier diff (keep / change / swap units / reorder), transaction rollback, uploads (size, type sniffing, random names, files removed when products are edited or deleted, failures logged), UTC timestamps on a non-UTC database, SPA fallback and real 404s |
 
 API tests need `TEST_DATABASE_URL`; without it they are skipped locally, and they are required in
 CI. GitHub Actions (`.github/workflows/ci.yml`) runs lint, the shared and client tests and the build
