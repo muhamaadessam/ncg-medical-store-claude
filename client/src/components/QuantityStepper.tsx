@@ -16,6 +16,7 @@ export function QuantityStepper({
   label = 'Bundles',
   hideLabel = false,
   size = 'default',
+  context,
   className,
 }: {
   value: number;
@@ -25,6 +26,8 @@ export function QuantityStepper({
   label?: string;
   hideLabel?: boolean;
   size?: 'default' | 'sm';
+  /** Appended to accessible names, e.g. "4 Packs, Vitamin D3" → "Increase bundles for 4 Packs…". */
+  context?: string;
   className?: string;
 }) {
   const id = useId();
@@ -36,6 +39,7 @@ export function QuantityStepper({
   useEffect(() => setDraft(String(value)), [value]);
 
   const rangeHint = `Whole number from ${min} to ${max}`;
+  const suffix = context ? ` for ${context}` : '';
   const parsed = /^\d+$/.test(draft) ? Number(draft) : NaN;
   const draftValid = Number.isInteger(parsed) && parsed >= min && parsed <= max;
 
@@ -88,6 +92,7 @@ export function QuantityStepper({
     <div className={cn('space-y-1', className)}>
       <label htmlFor={id} className={cn('text-sm font-medium', hideLabel && 'sr-only')}>
         {label}
+        {suffix}
       </label>
       <div className="flex items-center gap-1">
         <Button
@@ -97,7 +102,7 @@ export function QuantityStepper({
           className={buttonSize}
           onClick={() => step(-1)}
           disabled={value <= min && (draftValid || draft === '')}
-          aria-label={`Decrease ${label.toLowerCase()}`}
+          aria-label={`Decrease ${label.toLowerCase()}${suffix}`}
         >
           <Minus aria-hidden />
         </Button>
@@ -125,7 +130,7 @@ export function QuantityStepper({
           className={buttonSize}
           onClick={() => step(1)}
           disabled={value >= max && (draftValid || draft === '')}
-          aria-label={`Increase ${label.toLowerCase()}`}
+          aria-label={`Increase ${label.toLowerCase()}${suffix}`}
         >
           <Plus aria-hidden />
         </Button>

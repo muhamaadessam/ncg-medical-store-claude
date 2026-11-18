@@ -70,6 +70,10 @@ export function createCartStore(storage: CartStorage | undefined = safeStorage()
     clear() {
       commit([]);
     },
+    /** Put back a previous snapshot (used by "Undo"). */
+    restore(snapshot: readonly CartLine[]) {
+      commit(sanitizeLines(snapshot));
+    },
     /** Re-read storage (another tab changed the cart). */
     reload() {
       lines = read();
