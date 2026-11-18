@@ -9,9 +9,10 @@ export function createPool(databaseUrl = config.databaseUrl, options: mysql.Pool
   if (!databaseUrl) {
     throw new Error('DATABASE_URL is not set. Copy .env.example to .env and fill it in.');
   }
-  return mysql.createPool({
+  const pool = mysql.createPool({
     uri: databaseUrl,
     charset: 'utf8mb4_unicode_ci',
+    // mysql2 reads and writes DATETIME/TIMESTAMP values as UTC...
     timezone: 'Z',
     // Keep DECIMAL as strings so money never passes through a float (see shared/money.ts).
     decimalNumbers: false,
@@ -20,7 +21,16 @@ export function createPool(databaseUrl = config.databaseUrl, options: mysql.Pool
     enableKeepAlive: true,
     ...options,
   });
+  // ...so the session must be UTC too: otherwise CURRENT_TIMESTAMP (created_at, updated_at) is in
+  // the server's local zone (e.g. UTC-5 on shared hosting) and comes back hours off. Queries on a
+  // connection run in order, so this always runs before the connection's first real query.
+  pool.pool.on('connection', (connection) => {
+    connection.query(SET_UTC_SESSION);
+  });
+  return pool;
 }
+
+export const SET_UTC_SESSION = "SET time_zone = '+00:00'";
 
 export function createDb(pool: mysql.Pool): Database {
   return drizzle(pool, { schema, mode: 'default' });
