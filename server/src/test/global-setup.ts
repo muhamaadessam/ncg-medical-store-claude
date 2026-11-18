@@ -5,6 +5,8 @@ import { assertTestDatabase, dropAllTables, TEST_DATABASE_URL } from './test-db'
 /** Rebuild the test database from scratch with the real migrations, once per test run. */
 export default async function setup(): Promise<void> {
   if (!TEST_DATABASE_URL) {
+    // In CI the database tests are the point: never let them be skipped silently.
+    if (process.env.CI) throw new Error('TEST_DATABASE_URL must be set in CI');
     console.warn('[test] TEST_DATABASE_URL not set: database tests will be skipped');
     return;
   }
