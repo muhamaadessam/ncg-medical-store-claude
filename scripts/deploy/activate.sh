@@ -21,8 +21,12 @@ if [ ! -f "$VENV/bin/activate" ]; then
   echo "::error::No Node.js $NODE_MAJOR virtual environment at $VENV. Create the app in cPanel > Setup Node.js App (Node.js $NODE_MAJOR, root $APP_NAME)."
   exit 1
 fi
+# CloudLinux's generated activate script reads variables it never sets (e.g. CL_VIRTUAL_ENV), so
+# it must be sourced without `set -u`.
+set +u
 # shellcheck disable=SC1091
 source "$VENV/bin/activate"
+set -u
 cd "$APP_PATH"
 echo "[activate] $APP_PATH with Node.js $(node -v), npm $(npm -v)"
 
