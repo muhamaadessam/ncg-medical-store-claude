@@ -117,8 +117,8 @@ lazy images, page titles.
 
 ## Task 9 — CI + README
 
-- `.github/workflows/ci.yml`: Node 20, `npm ci`, lint, test (MySQL service container for API tests),
-  build.
+- `.github/workflows/ci.yml`: Node 20, `npm ci`, lint, test (**MariaDB 11.4** service container for API
+  tests — same engine as production), build.
 - README: live link + admin link, features, stack, AI tools used (Claude Code + Claude; mention the
   separate Lovable version if submitted), pricing & cart logic with the 39.000 KWD example, DB
   schema + mermaid ER diagram, project structure, local setup (Windows + Linux), env vars,
@@ -130,6 +130,12 @@ lazy images, page titles.
 Write `docs/DEPLOY.md` and a `npm run package` script that produces a deployable folder/zip:
 `server/dist`, `client/dist`, `shared` build, `package.json` + lockfile, migrations, seed.
 Steps to document:
+
+Hosting facts (checked 2026-11-18): MariaDB 11.4, Node.js up to 26 available (use **22**; the cPanel
+default is 14, so pick it explicitly), cPanel Terminal + SSH available. Already done: subdomain, DB + user,
+Cloudflare A record (proxied), Cloudflare Origin Certificate installed in cPanel (no AutoSSL on this
+plan, so the record must stay proxied), Configuration Rule for the subdomain (Full strict, Rocket Loader
+off, Email Obfuscation off).
 
 1. Namecheap cPanel → Domains: create subdomain `ncg.muhammadessam.me` (document root outside the app root).
    Cloudflare → DNS: `A` record `ncg` → Namecheap server IP (shown in cPanel "Server Information").
