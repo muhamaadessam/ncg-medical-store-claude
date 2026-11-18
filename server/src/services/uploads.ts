@@ -79,6 +79,10 @@ export async function removeOrphanUploads(
     .from(productImages)
     .where(inArray(productImages.url, candidates));
   const used = new Set(stillUsed.map((r) => r.url));
+  for (const url of used) {
+    // Not an error, but say so: this is what silently kept deleted images on disk before.
+    console.error(`[uploads] kept ${url}: another product still uses it`);
+  }
 
   for (const url of candidates.filter((u) => !used.has(u))) {
     const file = uploadPath(uploadDir, url)!;
