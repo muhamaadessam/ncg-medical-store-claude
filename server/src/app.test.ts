@@ -4,12 +4,24 @@ import path from 'node:path';
 import request from 'supertest';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { createApp } from './app';
+import type { Database } from './db/client';
+
+/** Minimal DB stubs: these tests don't need MySQL (see routes/*.test.ts for real DB tests). */
+const healthyDb = { execute: () => Promise.resolve([]) } as unknown as Database;
+const downDb = { execute: () => Promise.reject(new Error('ECONNREFUSED')) } as unknown as Database;
 
 describe('app', () => {
-  it('GET /api/health returns ok', async () => {
-    const res = await request(createApp({ serveClient: false })).get('/api/health');
+  it('GET /api/health returns ok when the database answers', async () => {
+    const res = await request(createApp({ serveClient: false, db: healthyDb })).get('/api/health');
     expect(res.status).toBe(200);
-    expect(res.body.status).toBe('ok');
+    expect(res.body).toMatchObject({ status: 'ok', database: 'ok' });
+    expect(res.headers['cache-control']).toBe('no-store');
+  });
+
+  it('GET /api/health returns 503 when the database is down', async () => {
+    const res = await request(createApp({ serveClient: false, db: downDb })).get('/api/health');
+    expect(res.status).toBe(503);
+    expect(res.body).toMatchObject({ status: 'degraded', database: 'unavailable' });
   });
 
   it('unknown /api routes return a JSON 404', async () => {
@@ -21,8 +33,8 @@ describe('app', () => {
   });
 
   it('malformed JSON bodies return a JSON 400', async () => {
-    const res = await request(createApp({ serveClient: false }))
-      .post('/api/health')
+    const res = await request(createApp({ serveClient: false, db: healthyDb }))
+      .post('/api/admin/brands')
       .set('Content-Type', 'application/json')
       .send('{bad');
     expect(res.status).toBe(400);
@@ -30,7 +42,7 @@ describe('app', () => {
   });
 
   it('sets security headers', async () => {
-    const res = await request(createApp({ serveClient: false })).get('/api/health');
+    const res = await request(createApp({ serveClient: false, db: healthyDb })).get('/api/health');
     expect(res.headers['x-content-type-options']).toBe('nosniff');
     expect(res.headers['x-powered-by']).toBeUndefined();
   });

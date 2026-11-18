@@ -1,5 +1,5 @@
 import { sql } from 'drizzle-orm';
-import { config } from '../config';
+import '../config'; // loads .env
 import { createDb, createPool, type Database } from '../db/client';
 import { brands, categories, pricingTiers, productImages, products } from '../db/schema';
 
@@ -15,7 +15,7 @@ export function assertTestDatabase(url: string): void {
       `TEST_DATABASE_URL must point to a database ending in "_test" (got "${dbName}")`,
     );
   }
-  if (url === config.databaseUrl) {
+  if (url === process.env.DATABASE_URL) {
     throw new Error('TEST_DATABASE_URL must differ from DATABASE_URL');
   }
 }

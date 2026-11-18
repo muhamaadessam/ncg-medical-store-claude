@@ -17,7 +17,7 @@
     "build": "npm run build -w shared && npm run build -w client && npm run build -w server",
     "start": "npm run start -w server",
     "test": "npm run build -w shared && npm run test --workspaces --if-present",
-    "lint": "eslint . && prettier --check .",
+    "lint": "eslint . && prettier --check . && npm run typecheck",
     "format": "prettier --write .",
     "typecheck": "npm run typecheck --workspaces --if-present",
     "db:migrate": "npm run db:migrate -w server",

@@ -8,13 +8,15 @@ export const ROOT_DIR = path.resolve(__dirname, '../..');
 dotenv.config({ path: path.join(ROOT_DIR, '.env'), quiet: true });
 
 const nodeEnv = process.env.NODE_ENV ?? 'development';
+const isTest = nodeEnv === 'test';
 
 export const config = {
   nodeEnv,
   isProduction: nodeEnv === 'production',
-  isTest: nodeEnv === 'test',
+  isTest,
   port: Number(process.env.PORT) || 3001,
-  databaseUrl: process.env.DATABASE_URL ?? '',
+  // Tests never touch the dev/prod database, even by accident.
+  databaseUrl: (isTest ? process.env.TEST_DATABASE_URL : process.env.DATABASE_URL) ?? '',
   uploadDir: path.resolve(ROOT_DIR, process.env.UPLOAD_DIR || 'server/uploads'),
   clientDistDir: path.join(ROOT_DIR, 'client', 'dist'),
 } as const;

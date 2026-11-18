@@ -55,3 +55,16 @@ export function formatKWD(fils: number): string {
   const fraction = (abs % FILS_PER_KWD).toString().padStart(3, '0');
   return `${negative ? '-' : ''}${whole}.${fraction} KWD`;
 }
+
+/**
+ * Integer fils → plain decimal KWD string without currency, e.g. 19500 → "19.500".
+ * Used for DECIMAL columns and form inputs (no `toFixed`, no float math).
+ */
+export function filsToKwdString(fils: number): string {
+  if (!Number.isSafeInteger(fils)) {
+    throw new TypeError(`filsToKwdString expects integer fils, got ${String(fils)}`);
+  }
+  const abs = Math.abs(fils);
+  const fraction = (abs % FILS_PER_KWD).toString().padStart(3, '0');
+  return `${fils < 0 ? '-' : ''}${Math.floor(abs / FILS_PER_KWD)}.${fraction}`;
+}
