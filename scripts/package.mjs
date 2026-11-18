@@ -1,7 +1,8 @@
 /**
  * Build a self-contained deployment folder + zip for cPanel ("Setup Node.js App" / Passenger).
  *
- *   npm run package   →   package-deploy/  and  ncg-pharmacy-deploy.zip
+ *   npm run package                      →   package-deploy/ + ncg-pharmacy-deploy.zip (manual upload)
+ *   node scripts/package.mjs build/release   →   build/release/ only (used by CI before rsync)
  *
  * Why not just upload the repo?
  * - CloudLinux's Node.js selector forbids a `node_modules` folder in the app root (it manages its
@@ -20,7 +21,9 @@ import { fileURLToPath } from 'node:url';
 import archiver from 'archiver';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
-const OUT = path.join(ROOT, 'package-deploy');
+const OUT_ARG = process.argv[2];
+const OUT = path.resolve(ROOT, OUT_ARG ?? 'package-deploy');
+const MAKE_ZIP = !OUT_ARG;
 const ZIP = path.join(ROOT, 'ncg-pharmacy-deploy.zip');
 const rel = (...p) => path.join(ROOT, ...p);
 const readJson = (file) => JSON.parse(fs.readFileSync(file, 'utf8'));
@@ -36,7 +39,7 @@ for (const file of ['client/dist/index.html', 'server/dist/index.js', 'shared/di
 }
 
 fs.rmSync(OUT, { recursive: true, force: true });
-fs.rmSync(ZIP, { force: true });
+if (MAKE_ZIP) fs.rmSync(ZIP, { force: true });
 fs.mkdirSync(OUT, { recursive: true });
 
 const copy = (from, to = from, filter = () => true) =>
@@ -51,6 +54,7 @@ copy('server/dist', 'server/dist', (src) => !/\.test\.js$/.test(src));
 copy('server/drizzle'); // migrations (npm run db:migrate)
 copy('server/seed-images'); // demo images (npm run db:seed)
 copy('shared/dist', 'server/node_modules/@ncg/shared/dist');
+copy('scripts/deploy/activate.sh', 'deploy/activate.sh'); // run on the server after upload
 
 const shared = readJson(rel('shared/package.json'));
 fs.writeFileSync(
@@ -139,19 +143,20 @@ fs.writeFileSync(
 );
 
 // 6. Zip (contents at the zip root, so it extracts straight into the app folder).
-await new Promise((resolve, reject) => {
-  const output = fs.createWriteStream(ZIP);
-  const archive = archiver('zip', { zlib: { level: 9 } });
-  output.on('close', resolve);
-  archive.on('error', reject);
-  archive.pipe(output);
-  archive.directory(OUT, false);
-  archive.finalize();
-});
+if (MAKE_ZIP)
+  await new Promise((resolve, reject) => {
+    const output = fs.createWriteStream(ZIP);
+    const archive = archiver('zip', { zlib: { level: 9 } });
+    output.on('close', resolve);
+    archive.on('error', reject);
+    archive.pipe(output);
+    archive.directory(OUT, false);
+    archive.finalize();
+  });
 
 const mb = (bytes) => `${Math.round(bytes / 104857.6) / 10} MB`;
 console.log(`[package] ${path.relative(ROOT, OUT)}/ ready`);
-console.log(`[package] ${path.relative(ROOT, ZIP)} (${mb(fs.statSync(ZIP).size)})`);
+if (MAKE_ZIP) console.log(`[package] ${path.relative(ROOT, ZIP)} (${mb(fs.statSync(ZIP).size)})`);
 console.log(
   '[package] dependencies:',
   Object.entries(dependencies)

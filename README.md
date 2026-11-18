@@ -326,8 +326,9 @@ npm test
 | `server` | 66    | every endpoint with supertest against **real MariaDB/MySQL**: CRUD, validation (400 + field paths), duplicate names (409), RESTRICT delete (409), CASCADE, tier diff (keep / change / swap units / reorder), transaction rollback, uploads (size, type sniffing, random names, cleanup), SPA fallback |
 
 API tests need `TEST_DATABASE_URL`; without it they are skipped locally, and they are required in
-CI. GitHub Actions (`.github/workflows/ci.yml`) runs `npm ci`, lint, tests against a
-**MariaDB 11.4** service container (same engine as production) and the build on Node 20.
+CI. GitHub Actions (`.github/workflows/ci.yml`) runs lint, the shared and client tests and the build
+on **Node.js 20 and 24**, and the API tests against real **MariaDB 11.4** (production's engine) and
+**MySQL 8.4** containers; pushes to `main` that pass are deployed.
 
 ### Manual checklist
 
@@ -352,15 +353,16 @@ Production runs on **Namecheap shared hosting (cPanel)** as a single Node.js app
 origin (no CORS). DNS for the subdomain is on **Cloudflare** (proxied, SSL "Full (strict)" with a
 Cloudflare Origin Certificate installed in cPanel).
 
-In short: create the database and user in cPanel, create the Node.js app (Node 22, startup file
+In short: create the database and user in cPanel, create the Node.js app (Node 24, startup file
 `server/dist/index.js`, `NODE_ENV=production`, `DATABASE_URL`, `UPLOAD_DIR` outside the app's
 build output), upload the deployment package, run NPM install, `db:migrate` and `db:seed`, then
 restart and check `/api/health`. The step-by-step guide is in [`docs/DEPLOY.md`](docs/DEPLOY.md).
 
-**Automatic deploys**: every push to `main` that passes CI is deployed by
-`.github/workflows/deploy.yml` (build on GitHub → rsync over SSH → install inside the CloudLinux
-virtual environment → migrate → restart → health check). One-time setup (SSH key + GitHub
-environment secrets) is in [`docs/DEPLOY.md`](docs/DEPLOY.md#automatic-deploys-on-every-push-github-actions).
+**Automatic deploys**: `.github/workflows/ci.yml` ("CI and deploy") tests every pull request and
+every push; a push to `main` that passes is deployed (build on GitHub → check the server's Node.js →
+rsync over SSH → install inside the CloudLinux virtual environment → migrate → restart → health and
+TLS checks of every page). One-time setup (deploy key, Actions variables and secrets) is in
+[`docs/DEPLOY.md`](docs/DEPLOY.md#automatic-deploys-on-every-push-github-actions).
 
 ## Known limitations
 

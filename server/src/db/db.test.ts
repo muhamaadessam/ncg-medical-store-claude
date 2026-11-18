@@ -60,7 +60,7 @@ describe.skipIf(!hasTestDb)('database schema (MySQL/MariaDB)', () => {
 
   it('creates InnoDB utf8mb4 tables', async () => {
     const [rows] = (await db.execute(sql`
-      SELECT table_name AS name, engine, table_collation AS collation
+      SELECT table_name AS name, engine AS engine, table_collation AS collation
       FROM information_schema.tables
       WHERE table_schema = DATABASE() AND table_name <> '__drizzle_migrations'`)) as unknown as [
       { name: string; engine: string; collation: string }[],
