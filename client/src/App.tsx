@@ -2,13 +2,14 @@ import { createBrowserRouter, RouterProvider } from 'react-router-dom';
 import { RootLayout } from '@/components/layout/RootLayout';
 import { HomePage } from '@/pages/HomePage';
 import { NotFoundPage } from '@/pages/NotFoundPage';
+import { ProductPage } from '@/pages/ProductPage';
 
 const router = createBrowserRouter([
   {
     element: <RootLayout />,
     children: [
       { path: '/', element: <HomePage /> },
-      { path: '/products/:id', element: <ComingSoon title="Product" /> },
+      { path: '/products/:id', element: <ProductPage /> },
       { path: '/cart', element: <ComingSoon title="Cart" /> },
       { path: '/admin/*', element: <ComingSoon title="Admin" /> },
       { path: '*', element: <NotFoundPage /> },

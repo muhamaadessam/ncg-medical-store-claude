@@ -1,5 +1,5 @@
 import type { BrandDto, CategoryDto, ProductDto, ProductListQuery } from '@ncg/shared';
-import { keepPreviousData, useQuery } from '@tanstack/react-query';
+import { keepPreviousData, useQuery, useQueryClient } from '@tanstack/react-query';
 import { apiFetch } from '@/lib/api';
 
 /** Every catalog query lives under ['catalog'] so admin mutations can invalidate them all at once. */
@@ -39,5 +39,21 @@ export function useCategories() {
   return useQuery({
     queryKey: catalogKeys.categories,
     queryFn: ({ signal }) => apiFetch<CategoryDto[]>('/api/categories', { signal }),
+  });
+}
+
+export function useProduct(id: string | undefined) {
+  const queryClient = useQueryClient();
+  return useQuery<ProductDto, Error, ProductDto, ReturnType<typeof catalogKeys.product>>({
+    queryKey: catalogKeys.product(id ?? ''),
+    queryFn: ({ signal }) =>
+      apiFetch<ProductDto>(`/api/products/${encodeURIComponent(id!)}`, { signal }),
+    enabled: Boolean(id),
+    // Coming from the listing: show the product we already have while fresh data loads.
+    placeholderData: () =>
+      queryClient
+        .getQueriesData<ProductDto[]>({ queryKey: ['catalog', 'products'] })
+        .flatMap(([, list]) => list ?? [])
+        .find((p) => p.id === id),
   });
 }
