@@ -117,21 +117,32 @@ lazy images, page titles.
 
 ## Task 9 — CI + README
 
-- `.github/workflows/ci.yml`: Node 20, `npm ci`, lint, test (MySQL service container for API tests),
-  build.
+- `.github/workflows/ci.yml`: Node 20, `npm ci`, lint, test (**MariaDB 11.4** service container for API
+  tests — same engine as production), build.
 - README: live link + admin link, features, stack, AI tools used (Claude Code + Claude; mention the
   separate Lovable version if submitted), pricing & cart logic with the 39.000 KWD example, DB
   schema + mermaid ER diagram, project structure, local setup (Windows + Linux), env vars,
   testing (automated + manual checklist), deployment (cPanel steps), known limitations (no auth,
   cart per browser, out-of-scope features, local disk uploads).
 
-## Task 10 — Deploy to cPanel (`ncg.muhammadessam.me`)
+## Task 10 — Deploy to Namecheap cPanel + Cloudflare DNS (`ncg.muhammadessam.me`)
 
 Write `docs/DEPLOY.md` and a `npm run package` script that produces a deployable folder/zip:
 `server/dist`, `client/dist`, `shared` build, `package.json` + lockfile, migrations, seed.
 Steps to document:
 
-1. cPanel → Domains: create subdomain `ncg.muhammadessam.me`; run AutoSSL.
+Hosting facts (checked 2026-11-18): MariaDB 11.4, Node.js up to 26 available (use **22**; the cPanel
+default is 14, so pick it explicitly), cPanel Terminal + SSH available. Already done: subdomain, DB + user,
+Cloudflare A record (proxied), Cloudflare Origin Certificate installed in cPanel (no AutoSSL on this
+plan, so the record must stay proxied), Configuration Rule for the subdomain (Full strict, Rocket Loader
+off, Email Obfuscation off).
+
+1. Namecheap cPanel → Domains: create subdomain `ncg.muhammadessam.me` (document root outside the app root).
+   Cloudflare → DNS: `A` record `ncg` → Namecheap server IP (shown in cPanel "Server Information").
+   SSL: issue the cert first with the record **DNS only** (grey cloud) so cPanel AutoSSL validates, or
+   install a Cloudflare Origin Certificate in cPanel SSL/TLS; then switch to **Proxied** and set
+   Cloudflare SSL/TLS mode to **Full (strict)** (never "Flexible": redirect loops). Disable Rocket Loader
+   (conflicts with the CSP); purge Cloudflare cache after each deploy (index.html is `no-cache`).
 2. MySQL Databases: create DB + user, grant all; build `DATABASE_URL`.
 3. Setup Node.js App: Node 20, app root, URL `ncg.muhammadessam.me`, startup file `server/dist/index.js`,
    env vars (`NODE_ENV=production`, `DATABASE_URL`, `UPLOAD_DIR`).

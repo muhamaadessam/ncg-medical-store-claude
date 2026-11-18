@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { formatKWD, toFils } from './money';
+import { filsToKwdString, formatKWD, toFils } from './money';
 
 describe('toFils', () => {
   it('converts numbers to integer fils', () => {
@@ -63,5 +63,18 @@ describe('formatKWD', () => {
 
   it('round-trips with toFils', () => {
     expect(formatKWD(toFils('19.500') * 2)).toBe('39.000 KWD');
+  });
+});
+
+describe('filsToKwdString', () => {
+  it('formats fils as a plain 3-decimal string', () => {
+    expect(filsToKwdString(19500)).toBe('19.500');
+    expect(filsToKwdString(1)).toBe('0.001');
+    expect(filsToKwdString(1234500)).toBe('1234.500');
+    expect(filsToKwdString(-1250)).toBe('-1.250');
+  });
+
+  it('rejects non-integers', () => {
+    expect(() => filsToKwdString(1.5)).toThrow(TypeError);
   });
 });

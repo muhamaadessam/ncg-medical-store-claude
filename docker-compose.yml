@@ -1,0 +1,24 @@
+# Optional local database (same engine and version as production).
+#   docker compose up -d
+# Matches the defaults in .env.example; creates ncg_pharmacy and ncg_pharmacy_test.
+services:
+  db:
+    image: mariadb:11.4
+    restart: unless-stopped
+    environment:
+      MARIADB_ROOT_PASSWORD: root
+      MARIADB_DATABASE: ncg_pharmacy
+      MARIADB_USER: ncg
+      MARIADB_PASSWORD: ncg_password
+    ports:
+      - '3306:3306'
+    volumes:
+      - db-data:/var/lib/mysql
+      - ./scripts/dev-db-init.sql:/docker-entrypoint-initdb.d/10-test-db.sql:ro
+    healthcheck:
+      test: ['CMD', 'healthcheck.sh', '--connect', '--innodb_initialized']
+      interval: 5s
+      retries: 20
+
+volumes:
+  db-data:

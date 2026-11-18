@@ -4,17 +4,27 @@ import compression from 'compression';
 import express from 'express';
 import helmet from 'helmet';
 import { config } from './config';
-import { apiNotFoundHandler, errorHandler } from './middleware/errors';
-import { healthRouter } from './routes/health';
+import { getDb, type Database } from './db/client';
+import { errorHandler } from './middleware/errors';
+import { apiRouter } from './routes';
 
 export interface AppOptions {
   /** Serve the built React app with an SPA fallback. Defaults to production mode. */
   serveClient?: boolean;
   clientDistDir?: string;
+  /** Database to use; defaults to the app-wide pool from DATABASE_URL (created lazily). */
+  db?: Database;
+  /** Where uploaded images are stored; defaults to UPLOAD_DIR. */
+  uploadDir?: string;
 }
 
 export function createApp(options: AppOptions = {}) {
-  const { serveClient = config.isProduction, clientDistDir = config.clientDistDir } = options;
+  const {
+    serveClient = config.isProduction,
+    clientDistDir = config.clientDistDir,
+    uploadDir = config.uploadDir,
+  } = options;
+  const db = () => options.db ?? getDb();
   const app = express();
 
   app.disable('x-powered-by');
@@ -35,14 +45,11 @@ export function createApp(options: AppOptions = {}) {
   app.use(express.json({ limit: '1mb' }));
 
   // ---- API ----
-  const api = express.Router();
-  api.use('/health', healthRouter);
-  api.use(apiNotFoundHandler);
-  app.use('/api', api);
+  app.use('/api', apiRouter({ db, uploadDir }));
 
   // ---- Uploaded images ----
-  fs.mkdirSync(config.uploadDir, { recursive: true });
-  app.use('/uploads', express.static(config.uploadDir, { maxAge: '7d', fallthrough: false }));
+  fs.mkdirSync(uploadDir, { recursive: true });
+  app.use('/uploads', express.static(uploadDir, { maxAge: '7d', fallthrough: false }));
 
   // ---- Built React app (production) ----
   if (serveClient) {
