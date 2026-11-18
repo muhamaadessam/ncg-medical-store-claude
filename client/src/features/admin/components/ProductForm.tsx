@@ -4,7 +4,6 @@ import { Controller, useForm } from 'react-hook-form';
 import { toast } from 'sonner';
 import { zodResolver } from '@hookform/resolvers/zod';
 import {
-  filsToKwdString,
   MAX_IMAGES_PER_PRODUCT,
   productInputSchema,
   type BrandDto,
@@ -13,43 +12,15 @@ import {
   type ProductFormValues,
   type ProductInput,
 } from '@ncg/shared';
-import { fieldAria, FormField } from '@/components/FormField';
+import { FormField } from '@/components/FormField';
+import { fieldAria } from '@/lib/fieldAria';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { NativeSelect } from '@/components/ui/native-select';
 import { Textarea } from '@/components/ui/textarea';
+import { toFormValues } from '../productForm';
 import { ImagesField } from './ImagesField';
 import { TiersField } from './TiersField';
-
-export function toFormValues(product?: ProductDto): ProductFormValues {
-  if (!product) {
-    return {
-      name: '',
-      description: '',
-      brandId: '',
-      categoryId: '',
-      images: [],
-      tiers: [{ label: '1 Pack', unitsPerBundle: 1, bundlePrice: '' }],
-    };
-  }
-  return {
-    name: product.name,
-    description: product.description ?? '',
-    brandId: product.brand.id,
-    categoryId: product.category.id,
-    images: product.images.map((i) => i.url),
-    tiers: product.tiers.map((t) => ({
-      id: t.id,
-      label: t.label,
-      unitsPerBundle: t.unitsPerBundle,
-      bundlePrice: filsToKwdString(t.bundlePriceFils),
-    })),
-  };
-}
-
-const KNOWN_PATHS =
-  /^(name|description|brandId|categoryId|images(\.\d+)?|tiers(\.\d+\.(label|unitsPerBundle|bundlePrice))?)$/;
-export const isProductFieldPath = (path: string) => KNOWN_PATHS.test(path);
 
 export type ProductFormApi = ReturnType<typeof useForm<ProductFormValues, unknown, ProductInput>>;
 

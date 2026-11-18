@@ -3,7 +3,8 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { toast } from 'sonner';
 import { brandInputSchema, type BrandInput, type TaxonomyDto } from '@ncg/shared';
-import { fieldAria, FormField } from '@/components/FormField';
+import { FormField } from '@/components/FormField';
+import { fieldAria } from '@/lib/fieldAria';
 import { Button } from '@/components/ui/button';
 import {
   Dialog,

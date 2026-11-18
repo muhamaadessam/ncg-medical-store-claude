@@ -6,11 +6,8 @@ import { EmptyState, ErrorState } from '@/components/StatusViews';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { applyServerErrors, useSaveProduct } from '@/features/admin/api';
-import {
-  isProductFieldPath,
-  ProductForm,
-  type ProductFormApi,
-} from '@/features/admin/components/ProductForm';
+import { ProductForm, type ProductFormApi } from '@/features/admin/components/ProductForm';
+import { isProductFieldPath } from '@/features/admin/productForm';
 import { useBrands, useCategories, useProduct } from '@/features/catalog/api';
 import { ApiError, errorMessage } from '@/lib/api';
 import { usePageTitle } from '@/lib/usePageTitle';

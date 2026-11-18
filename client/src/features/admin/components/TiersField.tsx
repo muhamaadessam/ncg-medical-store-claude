@@ -6,28 +6,12 @@ import {
   type FieldErrors,
   type UseFormRegister,
 } from 'react-hook-form';
-import {
-  formatKWD,
-  perPackFils,
-  priceKwdSchema,
-  toFils,
-  type ProductFormValues,
-} from '@ncg/shared';
-import { fieldAria } from '@/components/FormField';
+import type { ProductFormValues } from '@ncg/shared';
+import { fieldAria } from '@/lib/fieldAria';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-
-/** "4.875 KWD per pack" from what is typed so far (integer fils), or a prompt. */
-export function perPackHint(price: unknown, units: unknown): string {
-  const parsed = priceKwdSchema.safeParse(price);
-  if (!parsed.success || !Number.isInteger(units) || (units as number) < 1) {
-    return 'Enter units and price to see the per-pack price';
-  }
-  const fils = toFils(parsed.data);
-  if (units === 1) return `${formatKWD(fils)} for 1 pack`;
-  return `${formatKWD(perPackFils({ bundlePriceFils: fils, unitsPerBundle: units as number }))} per pack`;
-}
+import { perPackHint } from '../productForm';
 
 export function TiersField({
   control,
