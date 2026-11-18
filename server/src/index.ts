@@ -1,5 +1,6 @@
 import { createApp } from './app';
 import { config } from './config';
+import { checkUploadDir } from './services/uploads';
 
 if (config.isProduction && !process.env.UPLOAD_DIR) {
   console.warn(
@@ -7,6 +8,12 @@ if (config.isProduction && !process.env.UPLOAD_DIR) {
       'Set it to a folder outside the app so redeploys never delete uploads.',
   );
 }
+
+// Shows the upload folder actually used (UPLOAD_DIR) and whether files can be written/deleted there.
+void checkUploadDir(config.uploadDir).then(({ ok, error }) => {
+  if (ok) console.log(`[server] uploads: ${config.uploadDir} (writable)`);
+  else console.error(`[server] uploads: ${config.uploadDir} is NOT writable (${error})`);
+});
 
 const app = createApp();
 

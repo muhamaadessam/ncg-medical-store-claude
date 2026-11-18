@@ -481,5 +481,45 @@ describe.skipIf(!hasTestDb)('REST API', () => {
         .send({ ...toInput(product), images: [] });
       expect(fs.existsSync(file)).toBe(false);
     });
+
+    it('deletes the image files of a deleted product, and they stop being served', async () => {
+      const { brandId, categoryId } = await createBrandAndCategory(db);
+      const urls: string[] = [];
+      for (const name of ['a.png', 'b.png']) {
+        const upload = await request(app)
+          .post('/api/admin/uploads')
+          .attach('image', TINY_PNG, { filename: name, contentType: 'image/png' });
+        urls.push(upload.body.url);
+      }
+      const product = await createProduct({ ...vitaminD(brandId, categoryId), images: urls });
+      for (const url of urls) expect((await request(app).get(url)).status).toBe(200);
+
+      const res = await request(app).delete(`/api/admin/products/${product.id}`);
+      expect(res.status).toBe(204);
+
+      for (const url of urls) {
+        expect(fs.existsSync(path.join(uploadDir, path.basename(url)))).toBe(false);
+        expect((await request(app).get(url)).status).toBe(404);
+      }
+    });
+
+    it('keeps image files that another product still uses', async () => {
+      const { brandId, categoryId } = await createBrandAndCategory(db);
+      const upload = await request(app)
+        .post('/api/admin/uploads')
+        .attach('image', TINY_PNG, { filename: 'shared.png', contentType: 'image/png' });
+      const a = await createProduct({
+        ...vitaminD(brandId, categoryId),
+        images: [upload.body.url],
+      });
+      await createProduct({
+        ...vitaminD(brandId, categoryId),
+        name: 'Other',
+        images: [upload.body.url],
+      });
+
+      await request(app).delete(`/api/admin/products/${a.id}`);
+      expect(fs.existsSync(path.join(uploadDir, path.basename(upload.body.url)))).toBe(true);
+    });
   });
 });

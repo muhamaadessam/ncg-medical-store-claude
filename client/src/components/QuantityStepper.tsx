@@ -1,12 +1,15 @@
-import { useEffect, useId, useState, type KeyboardEvent } from 'react';
+import { useEffect, useId, useRef, useState, type KeyboardEvent } from 'react';
 import { Minus, Plus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 
 /**
- * Integer stepper (default 1–99). The text field only ever reports valid integers to `onChange`;
- * while the user types something invalid an inline hint explains the range, and on blur the
- * value snaps back into range. Never throws, never reports NaN.
+ * Integer stepper (default 1–99).
+ * - Valid typed values (whole numbers in range) are reported to `onChange` as you type.
+ * - Anything else ("2.5", "-5", "1e2", "abc", "0", "150", "") is kept exactly as typed, marked
+ *   invalid with an inline hint and NEVER turned into another number. While it is invalid, the
+ *   reported value goes back to the last valid one (the value before this edit), so a summary
+ *   never shows a half-typed number; on blur or Enter the field shows that value again.
  */
 export function QuantityStepper({
   value,
@@ -34,43 +37,59 @@ export function QuantityStepper({
   const hintId = `${id}-hint`;
   const [draft, setDraft] = useState(String(value));
   const [notice, setNotice] = useState<string>();
+  const focused = useRef(false);
+  /** Last valid value before the current edit: what an invalid draft falls back to. */
+  const lastValid = useRef(value);
 
-  // Follow outside changes (e.g. the same line updated from another tab).
-  useEffect(() => setDraft(String(value)), [value]);
+  // Follow outside changes (e.g. the cart updated in another tab), but never overwrite what the
+  // user is typing.
+  useEffect(() => {
+    if (!focused.current) {
+      setDraft(String(value));
+      lastValid.current = value;
+    }
+  }, [value]);
 
   const rangeHint = `Whole number from ${min} to ${max}`;
   const suffix = context ? ` for ${context}` : '';
-  const parsed = /^\d+$/.test(draft) ? Number(draft) : NaN;
-  const draftValid = Number.isInteger(parsed) && parsed >= min && parsed <= max;
+  const parse = (text: string) => {
+    if (!/^\d+$/.test(text)) return undefined;
+    const n = Number(text);
+    return n >= min && n <= max ? n : undefined;
+  };
+  const parsed = parse(draft);
+  const draftValid = parsed !== undefined;
+  const current = parsed ?? lastValid.current;
 
-  const commit = (next: number) => {
-    const clamped = Math.min(max, Math.max(min, next));
-    setDraft(String(clamped));
-    if (clamped !== value) onChange(clamped);
-    return clamped;
+  const report = (n: number) => {
+    if (n !== value) onChange(n);
   };
 
   const step = (delta: number) => {
+    const next = Math.min(max, Math.max(min, current + delta));
     setNotice(undefined);
-    commit((draftValid ? parsed : value) + delta);
+    setDraft(String(next));
+    lastValid.current = next;
+    report(next);
   };
 
   const handleInput = (text: string) => {
-    // Digits only: letters, signs, dots and exponents are dropped as they are typed.
-    const digits = text.replace(/\D/g, '').slice(0, 3);
-    setDraft(digits);
+    setDraft(text); // never rewrite what was typed
     setNotice(undefined);
-    const n = Number(digits);
-    if (digits !== '' && n >= min && n <= max && n !== value) onChange(n);
+    const n = parse(text);
+    // Invalid: fall back to the last valid value instead of keeping a half-typed number.
+    report(n ?? lastValid.current);
   };
 
-  const handleBlur = () => {
-    if (draftValid) return;
-    const fallback = draft === '' ? value : parsed;
-    const clamped = commit(fallback);
-    if (draft !== '' && clamped !== parsed) {
-      setNotice(`Adjusted to ${clamped} (${clamped === max ? 'maximum' : 'minimum'})`);
+  /** Blur / Enter: accept a valid draft, or show the last valid value again. */
+  const settle = () => {
+    if (draftValid) {
+      lastValid.current = parsed;
+      return;
     }
+    if (draft.trim() !== '') setNotice(`"${draft}" is not a whole number from ${min} to ${max}`);
+    setDraft(String(lastValid.current));
+    report(lastValid.current);
   };
 
   const handleKeyDown = (event: KeyboardEvent<HTMLInputElement>) => {
@@ -81,11 +100,11 @@ export function QuantityStepper({
       event.preventDefault();
       step(-1);
     } else if (event.key === 'Enter') {
-      handleBlur();
+      settle();
     }
   };
 
-  const showError = draft !== '' && !draftValid;
+  const showError = !draftValid;
   const buttonSize = size === 'sm' ? 'size-9' : 'size-10';
 
   return (
@@ -101,7 +120,7 @@ export function QuantityStepper({
           size="icon"
           className={buttonSize}
           onClick={() => step(-1)}
-          disabled={value <= min && (draftValid || draft === '')}
+          disabled={current <= min}
           aria-label={`Decrease ${label.toLowerCase()}${suffix}`}
         >
           <Minus aria-hidden />
@@ -113,8 +132,15 @@ export function QuantityStepper({
           pattern="[0-9]*"
           autoComplete="off"
           value={draft}
+          maxLength={8}
           onChange={(e) => handleInput(e.target.value)}
-          onBlur={handleBlur}
+          onFocus={() => {
+            focused.current = true;
+          }}
+          onBlur={() => {
+            focused.current = false;
+            settle();
+          }}
           onKeyDown={handleKeyDown}
           aria-invalid={showError || undefined}
           aria-describedby={hintId}
@@ -129,7 +155,7 @@ export function QuantityStepper({
           size="icon"
           className={buttonSize}
           onClick={() => step(1)}
-          disabled={value >= max && (draftValid || draft === '')}
+          disabled={current >= max}
           aria-label={`Increase ${label.toLowerCase()}${suffix}`}
         >
           <Plus aria-hidden />

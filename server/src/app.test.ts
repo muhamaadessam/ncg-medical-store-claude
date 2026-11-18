@@ -57,6 +57,25 @@ describe('app', () => {
     });
     afterAll(() => fs.rmSync(dist, { recursive: true, force: true }));
 
+    it.each(['/some/random/page', '/products', '/products/1/extra', '/cartx', '/favicon.ico.bak'])(
+      'answers unknown path %s with index.html and HTTP 404 (no soft 404)',
+      async (url) => {
+        const app = createApp({ serveClient: true, clientDistDir: dist });
+        const res = await request(app).get(url).set('Accept', 'text/html');
+        expect(res.status).toBe(404);
+        expect(res.text).toContain('id="root"'); // the React 404 page still renders
+      },
+    );
+
+    it.each(['/', '/cart', '/products/abc', '/admin', '/admin/products/new', '/admin/brands'])(
+      'answers client route %s with 200',
+      async (url) => {
+        const app = createApp({ serveClient: true, clientDistDir: dist });
+        const res = await request(app).get(url).set('Accept', 'text/html');
+        expect(res.status).toBe(200);
+      },
+    );
+
     it('falls back to index.html for deep links', async () => {
       const app = createApp({ serveClient: true, clientDistDir: dist });
       const res = await request(app).get('/products/123').set('Accept', 'text/html');

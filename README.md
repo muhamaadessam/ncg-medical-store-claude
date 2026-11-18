@@ -336,7 +336,7 @@ on **Node.js 20 and 24**, and the API tests against real **MariaDB 11.4** (produ
 - [ ] Add "4 Packs" twice from the home page → the cart has **one** line with 2 bundles.
 - [ ] Add "1 Pack" of the same product → the cart now has **two** lines.
 - [ ] Cart with 1×1 + 2×4 + 1×12 of Vitamin D3 → `99.500 KWD`, 21 packs.
-- [ ] Type `150`, `0` or `abc` in a stepper → it never breaks; values snap to 1–99 with a hint.
+- [ ] Type `2.5`, `-5`, `150`, `0` or `abc` in a stepper → shown as typed but marked invalid with a hint, the total does not change, and leaving the field restores the last valid number (never `25` for `2.5`).
 - [ ] Filter by MediCare + First Aid → only the thermometer; reload keeps the filters.
 - [ ] Admin: create a product with 3 tiers and an image → it appears in the shop immediately.
 - [ ] Admin: tier price `1.2345`, or two tiers with the same units → inline errors, nothing saved.
@@ -372,8 +372,10 @@ TLS checks of every page). One-time setup (deploy key, Actions variables and sec
 - **Out of scope**: checkout, payment, orders, inventory/stock, users, discounts beyond tier
   pricing.
 - **Uploads on local disk**: images are stored in `UPLOAD_DIR` on the server (fine for a single
-  shared-hosting instance; a multi-server setup would need object storage). Unused files are
-  deleted when products change.
+  shared-hosting instance; a multi-server setup would need object storage). Image files no product
+  uses any more are deleted when products are edited or deleted; a file that cannot be deleted is
+  logged with its path (`[uploads] could not delete …`), and the server logs the upload folder it
+  uses at startup (`[server] uploads: …`).
 - Prices are in KWD only; the UI is English only.
 
 ## AI tools used

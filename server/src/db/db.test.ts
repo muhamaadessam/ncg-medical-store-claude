@@ -78,6 +78,22 @@ describe.skipIf(!hasTestDb)('database schema (MySQL/MariaDB)', () => {
     }
   });
 
+  it('stores and returns UTC timestamps whatever the server time zone is', async () => {
+    // Every pooled connection runs in UTC (CI runs the database containers in UTC+5 to prove it).
+    const sessions = await Promise.all(
+      [1, 2, 3].map(() => db.execute(sql`SELECT @@session.time_zone AS tz`)),
+    );
+    for (const [rows] of sessions as unknown as [{ tz: string }[]][]) {
+      expect(rows[0]!.tz).toBe('+00:00');
+    }
+
+    const before = Date.now();
+    await db.insert(brands).values({ name: 'Clock check' });
+    const [row] = await db.select().from(brands);
+    // CURRENT_TIMESTAMP has second precision: allow a little slack, but never hours.
+    expect(Math.abs(row!.createdAt.getTime() - before)).toBeLessThan(5_000);
+  });
+
   it('stores names with full Unicode (utf8mb4)', async () => {
     await db.insert(brands).values({ name: 'صيدلية 💊' });
     const [row] = await db.select().from(brands);
