@@ -97,6 +97,21 @@ jobs:
       DEPLOY_USER: ${{ vars.DEPLOY_USER }}
       SITE_URL: ${{ vars.SITE_URL }}
     steps:
+      - name: Check the deploy settings
+        # Fails with a clear list instead of a cryptic SSH error when setup is incomplete.
+        env:
+          DEPLOY_SSH_KEY: ${{ secrets.DEPLOY_SSH_KEY }}
+          DEPLOY_KNOWN_HOSTS: ${{ secrets.DEPLOY_KNOWN_HOSTS }}
+        run: |
+          missing=""
+          for name in DEPLOY_HOST DEPLOY_PORT DEPLOY_USER SITE_URL DEPLOY_SSH_KEY DEPLOY_KNOWN_HOSTS; do
+            [ -n "${!name}" ] || missing="$missing $name"
+          done
+          if [ -n "$missing" ]; then
+            echo "::error::Missing Actions variables/secrets:$missing (see docs/DEPLOY.md)"
+            exit 1
+          fi
+
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
