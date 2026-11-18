@@ -82,7 +82,7 @@ describe('CartPage', () => {
     expect(screen.getByText('3 items')).toBeInTheDocument();
   });
 
-  it('updates totals when bundles change, clamped to 1–99', async () => {
+  it('updates totals when bundles change', async () => {
     const user = userEvent.setup();
     mockCatalog({ [vitaminD.id]: vitaminD });
     add('tier-4', vitaminD.id, 2);
@@ -94,11 +94,35 @@ describe('CartPage', () => {
 
     const input = screen.getByRole('textbox', { name: `Bundles for 4 Packs, ${vitaminD.name}` });
     await user.clear(input);
-    await user.type(input, '500');
+    await user.type(input, '12');
     await user.tab();
-    expect(cartStore.getLines()[0]!.bundles).toBe(99);
-    expect(summary()).toEqual(['99', '396', '1,930.500 KWD']);
+    expect(cartStore.getLines()[0]!.bundles).toBe(12);
+    expect(summary()).toEqual(['12', '48', '234.000 KWD']);
   });
+
+  it.each(['2.5', '-5', '1e2', 'abc', '0', '150', '500', ''])(
+    'rejects %j in the cart: the line keeps 2 bundles and the field is restored on blur',
+    async (text) => {
+      const user = userEvent.setup();
+      mockCatalog({ [vitaminD.id]: vitaminD });
+      add('tier-4', vitaminD.id, 2);
+      renderCart();
+      const input = await screen.findByRole('textbox', {
+        name: `Bundles for 4 Packs, ${vitaminD.name}`,
+      });
+
+      await user.clear(input);
+      if (text) await user.type(input, text);
+      expect(input).toHaveValue(text);
+      expect(input).toHaveAttribute('aria-invalid', 'true');
+      expect(cartStore.getLines()[0]!.bundles).toBe(2); // e.g. "2.5" never becomes 25
+      expect(summary()).toEqual(['2', '8', '39.000 KWD']);
+
+      await user.tab();
+      expect(input).toHaveValue('2');
+      expect(cartStore.getLines()[0]!.bundles).toBe(2);
+    },
+  );
 
   it('removes a line, with Undo', async () => {
     const user = userEvent.setup();

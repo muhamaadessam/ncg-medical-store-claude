@@ -105,6 +105,32 @@ describe('ProductPage', () => {
     ]);
   });
 
+  it.each(['2.5', '-5', '1e2', 'abc', '0', '150', '500', ''])(
+    'rejects %j on the product page: summary stays at 2 × 4 Packs, field restored on blur',
+    async (text) => {
+      const user = userEvent.setup();
+      mockFetch(() => json(withGallery));
+      renderAt(`/products/${vitaminD.id}`);
+      await user.click(await screen.findByRole('radio', { name: /4 Packs/ }));
+      await user.click(screen.getByRole('button', { name: 'Increase bundles' }));
+      const input = screen.getByRole('textbox', { name: 'Bundles' });
+
+      await user.clear(input);
+      if (text) await user.type(input, text);
+      expect(input).toHaveValue(text);
+      expect(input).toHaveAttribute('aria-invalid', 'true');
+      // No intermediate number (e.g. "50 × 4 Packs" while typing "500", or 25 for "2.5").
+      expect(summaryRows()).toEqual(['2 × 4 Packs', '8', '39.000 KWD']);
+
+      await user.tab();
+      expect(input).toHaveValue('2');
+      await user.click(screen.getAllByRole('button', { name: /add to cart/i })[0]!);
+      expect(cartStore.getLines()).toEqual([
+        { tierId: 'tier-4', productId: vitaminD.id, bundles: 2 },
+      ]);
+    },
+  );
+
   it('shows a plain price for a single-tier product', async () => {
     mockFetch(() => json(thermometer));
     renderAt(`/products/${thermometer.id}`);
