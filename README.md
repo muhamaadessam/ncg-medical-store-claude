@@ -285,15 +285,16 @@ Open http://localhost:5173 (the Vite dev server proxies `/api` and `/uploads` to
 port 3001). To run the production build locally: `npm run build` then `npm start`, and open
 http://localhost:3001.
 
-| Script                           | What it does                                                                            |
-| -------------------------------- | --------------------------------------------------------------------------------------- |
-| `npm run dev`                    | API (tsx watch) + client (Vite) + shared (tsc watch) together                           |
-| `npm run build`                  | Builds shared → client → server                                                         |
-| `npm start`                      | Runs the built server, which also serves `client/dist`                                  |
-| `npm test`                       | All tests (shared, client, server)                                                      |
-| `npm run lint`                   | ESLint + Prettier check + TypeScript                                                    |
-| `npm run db:migrate` / `db:seed` | Apply migrations / add demo data (`npm run db:seed -- --reset` wipes the catalog first) |
-| `npm run db:generate`            | Generate a migration after changing `server/src/db/schema.ts`                           |
+| Script                           | What it does                                                                                                 |
+| -------------------------------- | ------------------------------------------------------------------------------------------------------------ |
+| `npm run dev`                    | API (tsx watch) + client (Vite) + shared (tsc watch) together                                                |
+| `npm run build`                  | Builds shared → client → server                                                                              |
+| `npm start`                      | Runs the built server, which also serves `client/dist`                                                       |
+| `npm test`                       | All tests (shared, client, server)                                                                           |
+| `npm run lint`                   | ESLint + Prettier check + TypeScript                                                                         |
+| `npm run db:migrate` / `db:seed` | Apply migrations / add demo data (`npm run db:seed -- --reset` wipes the catalog first)                      |
+| `npm run package`                | Build + create `package-deploy/` and `ncg-pharmacy-deploy.zip` for cPanel ([docs/DEPLOY.md](docs/DEPLOY.md)) |
+| `npm run db:generate`            | Generate a migration after changing `server/src/db/schema.ts`                                                |
 
 Everything works the same on Windows and Linux (no shell-specific scripts; `cross-env` where
 needed).
